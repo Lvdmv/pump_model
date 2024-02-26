@@ -22,7 +22,7 @@ class Streams(websocket.WebSocketApp):
         data_json = json.loads(msg)
         self.symbol = data_json['data']['s']
         self.pump_object = self.dict_object[self.symbol.lower()]
-        self.pump_object.search_entry_point(self.symbol)
+        self.pump_object.search_entry_point(self.symbol, data_json['data']['k']['c'], data_json['data']['k']['v'])
 
     def threads(aruments, new_dict):
         Streams.dict_object = new_dict
