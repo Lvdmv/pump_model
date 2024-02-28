@@ -17,28 +17,27 @@ API_SECRET = os.getenv("API_SECRET")
 # Модель входа
 class IsPUMP:
     def __init__(self):
-        self.client = Client(api_key=API_KEY, api_secret=API_SECRET, testnet=True)
+        self.client = Client(api_key=API_KEY, api_secret=API_SECRET,  testnet=False)
         self.hourly_average_volumes = dict()
         self.X = None
         self.y = None
         self.lr = CustomLinearReg()
+        self.is_not_position = True
 
-    def data_processing(self, symbol, period=10):
-        klines = self.client.futures_klines(symbol=symbol, interval=Client.KLINE_INTERVAL_1MINUTE, limit=period)
+    def data_processing(self, symbol):
+        klines = self.client.futures_klines(symbol=symbol, interval=Client.KLINE_INTERVAL_1MINUTE,
+                                            since='1 minute ago UTC', limit=240)
 
         df = pd.DataFrame(klines, columns=['Open Time', 'Open', 'High', 'Low', 'Close', 'Volume', 'Close Time',
                                            'Quote Asset Volume', 'Number of Trades', 'Taker Buy Base Asset Volume',
                                            'Taker Buy Quote Asset Volume', 'Ignore'])
 
-        # df['Open Time'] = df['Open Time'].astype(int)
-        # df['Open_Time'] = self.get_formatted_time(df['Open Time'])
-        # print(df[['Open_Time', 'Open', 'High', 'Low', 'Close']])
         self.X = np.array(df[['Volume']]).astype(float)
         self.y = np.array(df['Close']).astype(float)
         return df
 
     def get_formatted_time(self, timestamp):
-        dt_object = datetime.datetime.fromtimestamp(timestamp / 1000.0)
+        dt_object = datetime.datetime.fromtimestamp(timestamp / 1000)
         time_str = dt_object.strftime("%Y-%m-%d %H:%M:%S.%f")
         return time_str
 
@@ -66,11 +65,13 @@ class IsPUMP:
         self.data_processing(corr_symbol)
         if int(self.y.sum()) != 0 and  int(self.X.sum()) != 0:
             self.lr.fit(self.X, self.y)
-            y_pred = self.lr.predict(np.array([float(corr_volume)]).reshape(-1, 1))
-            if y_pred[0] != 0:
-                diff_price = np.round(((float(corr_price) - y_pred) / (y_pred + 1e-15)) * 100, 2)
-                if diff_price > 1:
-                    print(f'$$$$$$$$  PUMP {corr_symbol} {diff_price[0]}%   y_pred = {y_pred[0]} y_corr = {corr_price}')
+            y_pred = self.lr.predict(np.array([float(corr_volume)]).reshape(-1, 1)) + self.y.std() * 2
+            cv = self.y.std() / self.y.mean()
+            if y_pred[0] != 0 and cv < 0.009 and self.is_not_position:
+                if float(corr_price) > y_pred:
+                    time_now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
+                    print(f'$$$$$$$$  PUMP {corr_symbol} corr_price = {corr_price} y_pred = {y_pred[0]:.3f}  cv = {cv} {time_now}')
+                    self.is_not_position = False
         print()
 
 
