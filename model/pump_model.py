@@ -5,6 +5,7 @@ from binance.client import Client
 import datetime
 import os
 from dotenv import load_dotenv
+import requests
 
 
 load_dotenv()  # переменные среды храняться в env.example
@@ -22,11 +23,12 @@ class IsPUMP:
         self.X = None
         self.y = None
         self.lr = CustomLinearReg()
+        self.angle = False
         self.is_not_position = True
 
-    def data_processing(self, symbol):
+    def data_processing(self, symbol, amt_clines):
         klines = self.client.futures_klines(symbol=symbol, interval=Client.KLINE_INTERVAL_1MINUTE,
-                                            since='1 minute ago UTC', limit=240)
+                                            since='1 minute ago UTC', limit=amt_clines)
 
         df = pd.DataFrame(klines, columns=['Open Time', 'Open', 'High', 'Low', 'Close', 'Volume', 'Close Time',
                                            'Quote Asset Volume', 'Number of Trades', 'Taker Buy Base Asset Volume',
@@ -36,10 +38,9 @@ class IsPUMP:
         self.y = np.array(df['Close']).astype(float)
         return df
 
-    def get_formatted_time(self, timestamp):
-        dt_object = datetime.datetime.fromtimestamp(timestamp / 1000)
-        time_str = dt_object.strftime("%Y-%m-%d %H:%M:%S.%f")
-        return time_str
+    def is_angle_accept(self):
+        if abs(self.y[0] - self.y[-1]) <= self.y.std() * 16:
+            self.angle = True
 
     def is_abnormal_volume(self, symbol):
         klines = self.client.futures_klines(symbol=symbol, interval=Client.KLINE_INTERVAL_1HOUR, limit=24)
@@ -48,30 +49,27 @@ class IsPUMP:
             hourly_average_volume = sum(volumes) / len(volumes)
             self.hourly_average_volumes[symbol] = hourly_average_volume
 
-    # пробитие верхнего канала
-    def is_exit_channel_high(self, new_index):
-        pass
-
-    # проверка аномального хая
-    def anomaly_high(self, corr_index):
-        pass
-
-    def pump_clear(self):
-        pass
+    def send_to_telegram(self, message):
+        apiURL = f'https://api.telegram.org/bot{TOKEN}/sendMessage'
+        try:
+            requests.post(apiURL, json={'chat_id': CHAT_ID, 'text': message})
+        except Exception as e:
+            print(e)
 
     # ПОИСК ТОЧКИ ВХОДА
     def search_entry_point(self, corr_symbol, corr_price, corr_volume):
         print(f'{corr_symbol}')
-        self.data_processing(corr_symbol)
-        if int(self.y.sum()) != 0 and  int(self.X.sum()) != 0:
+
+        self.data_processing(corr_symbol, 240)
+
+        if int(self.y.sum()) != 0 and int(self.X.sum()) != 0:
             self.lr.fit(self.X, self.y)
             y_pred = self.lr.predict(np.array([float(corr_volume)]).reshape(-1, 1)) + self.y.std() * 2
             cv = self.y.std() / self.y.mean()
-            if y_pred[0] != 0 and cv < 0.009 and self.is_not_position:
-                if float(corr_price) > y_pred:
-                    time_now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
-                    print(f'$$$$$$$$  PUMP {corr_symbol} corr_price = {corr_price} y_pred = {y_pred[0]:.3f}  cv = {cv} {time_now}')
-                    self.is_not_position = False
+            if y_pred[0] != 0 and cv < 0.009 and float(corr_price) > y_pred and self.is_angle_accept():
+                time_now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
+                text = f'PUMP {corr_symbol} corr_price = {corr_price} y_pred = {y_pred[0]:.3f} cv = {cv:.3f} {time_now}'
+                self.send_to_telegram(text)
+                print(text)
+                self.is_not_position = False
         print()
-
-
