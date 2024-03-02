@@ -66,7 +66,7 @@ class IsPUMP:
             self.lr.fit(self.X, self.y)
             y_pred = self.lr.predict(np.array([float(corr_volume)]).reshape(-1, 1)) + self.y.std() * 2
             cv = self.y.std() / self.y.mean()
-            if y_pred[0] != 0 and cv < 0.009 and float(corr_price) > y_pred and self.is_angle_accept():
+            if y_pred[0] != 0 and cv < 0.009 and float(corr_price) > y_pred:
                 time_now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
                 text = f'PUMP {corr_symbol} corr_price = {corr_price} y_pred = {y_pred[0]:.3f} cv = {cv:.3f} {time_now}'
                 self.send_to_telegram(text)
