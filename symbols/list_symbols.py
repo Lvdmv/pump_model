@@ -4,7 +4,7 @@ def future_symbols(client):
     """
     Функция для извлечения символов фьючерсов
 
-    Attributes
+    Parameters:
     ----------
     client : объект
         Объект клиента для работы с фьючерсами

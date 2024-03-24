@@ -5,29 +5,30 @@ import json
 
 # Создадим класс Streams, наследующий библиотеу WebSocket с приложением WebSocketApp
 class Streams(websocket.WebSocketApp):
-    """Класс Streams для загрузки данных с биржи Binance
+    """Класс Streams, наследующий библиотеку WebSocket с приложением WebSocketApp
+       для загрузки данных с биржи Binance
 
         Attributes
         ----------
         on_message: str
-            получает поток данных с биржи
+            Получает поток данных с биржи
         on_error: str
-            присылает сообщение об ошибке
+            Присылает сообщение об ошибке
         on_close: str
-            присылает сообщение о закрытии подключения
+            Присылает сообщение о закрытии подключения
         symbol: str
-            символ инструмента
+            Символ инструмента
         run_forever
-            запускает основной поток данных
+            Запускает основной поток данных
 
         Methods
         -------
-        on_open(): str
-            метод открытия соединения
+        on_open()
+            Метод открытия соединения
         message()
-            метод для получения и обработки данных
+            Метод для получения и обработки данных
         threads()
-            метод для создания многопоточного запроса по нескольким инструментам
+            Метод для создания многопоточного запроса по нескольким инструментам
         """
     def __init__(self, url):
         """
@@ -36,10 +37,10 @@ class Streams(websocket.WebSocketApp):
         пропишем свойства внутри класса, для открытия соединения, обработки сообщения,
         обработать возможную ошибку и закрытие
 
-        Attributes
+        Parameters:
         ----------
-        url:
-            получение url адреса для подключения к бирже
+        url: str
+            Получение url адреса для подключения к бирже
         """
         super().__init__(url=url, on_open=self.on_open) # обращаемся к атрибутам родительского класса websoket
         self.on_message = lambda ws, msg: self.message(msg)
@@ -52,9 +53,10 @@ class Streams(websocket.WebSocketApp):
         """
         Открытие соединения
 
-        Parameters
+        Parameters:
         ----------
-        ws: объект WebSocketApp
+        ws: объект
+            объект класса WebSocketApp
         """
         print('Websocket was opened')
 
@@ -62,10 +64,10 @@ class Streams(websocket.WebSocketApp):
         """
         Метод получает поток данных, конвертирует данные с биржи в json объект, а затем фильтрует данные
 
-        Parameters
+        Parameters:
         ----------
         msg: str
-            поток данных
+            Поток данных
         """
         data_json = json.loads(msg)  # выгрузим json
         self.symbol = data_json['data']['s']
@@ -75,6 +77,11 @@ class Streams(websocket.WebSocketApp):
     def threads(aruments, new_dict):
         """
         Метод для создания многопоточного запроса по нескольким инструментам
+
+        Parameters:
+        ----------
+        new_dict: dict()
+            Словарь с объектами класса IsPUMP
         """
-        Streams.dict_object = new_dict # объект класса IsPUMP(для каждого символа)
+        Streams.dict_object = new_dict # объекты класса IsPUMP(для каждого символа)
         return threading.Thread(target=Streams, args=(aruments,)).start()
