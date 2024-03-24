@@ -19,6 +19,27 @@ class IsPUMP:
     def __init__(self):
         """
         Инициализация класса для поиска точки входа
+
+        Attributes
+        ----------
+        client: объект
+            Объект класса Client
+        X: np.array, shape (n_samples, n_features)
+            Входные признаки
+        y: np.array, shape (n_samples,)
+            Целевая переменная
+        lr: объект
+            Объект класса CustomLinearReg
+        is_not_position: bool
+            Флаг проверяет открыта ли позиция по инструменту
+        Methods
+        -------
+        data_processing()
+            Обработка данных
+        send_to_telegram()
+            Метод для отправки сообщений
+        search_entry_point()
+            Метод для определения точки входа
         """
         self.client = Client(api_key=API_KEY, api_secret=API_SECRET)
         self.X = None
@@ -30,15 +51,15 @@ class IsPUMP:
         """
         Обработка данных для указанного символа
 
-        Attributes
+        Parameters
         ----------
         symbol : str
-            символ инструмента
+            Символ инструмента
 
         Return:
         ----------
         df : pd.DataFrame
-            обработанные данные
+            Обработанные данные
         """
         klines = self.client.futures_klines(symbol=symbol, interval=Client.KLINE_INTERVAL_1MINUTE,
                                             since='1 minute ago UTC', limit=60)
@@ -55,10 +76,10 @@ class IsPUMP:
         """
         Отправка сообщения в Telegram
 
-        Attributes
+        Parameters
         ----------
         message : str
-            текст сообщения
+            Текст сообщения
         """
         apiURL = f'https://api.telegram.org/bot{TOKEN}/sendMessage'
         try:
@@ -71,14 +92,14 @@ class IsPUMP:
         """
         Поиск точки входа
 
-        Attributes
+        Parameters
         ----------
         corr_symbol : str
-            символ инструмента
+            Символ инструмента
         corr_price : float
-            цена символа инструмента
+            Текущая цена инструмента
         corr_volume : float
-            объем символа инструмента
+            Текущий объем инструмента
         """
         self.data_processing(corr_symbol)
         cv = (self.y.std() / self.y.mean()) * 100  # коэффициент вариации(для определения равномерности распределения значений выборки)

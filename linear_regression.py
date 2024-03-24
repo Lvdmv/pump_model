@@ -15,7 +15,7 @@ class CustomLinearReg:
         """
         Обучает модель линейной регрессии
 
-        Attributes
+        Parameters
         ----------
         X: np.array, shape(n_samples, n_features)
             Входные признаки
@@ -36,7 +36,7 @@ class CustomLinearReg:
         """
         Производит предсказания на основе входных данных X
 
-        Attributes
+        Parameters
         ----------
         X: np.array, shape(n_samples, n_features)
             Входные признаки
@@ -56,7 +56,7 @@ class GradientLinearReg:
         """
         Инициализация модели линейной регрессии методом градиентного спуска.
 
-        Attributes:
+        Parameters:
         lr : float, по умолчанию 0.1
             Скорость обучения (learning rate)
         toller : float, по умолчанию 0.01
@@ -71,7 +71,7 @@ class GradientLinearReg:
         """
         Обучение модели линейной регрессии методом градиентного спуска.
 
-        Attributes:
+        Parameters:
         X : np.array, shape (n_samples, n_features)
             Входные признаки
         y : np.array, shape (n_samples,)
@@ -101,7 +101,7 @@ class GradientLinearReg:
         """
         Рассчитывает коэффициент детерминации модели.
 
-        Attributes:
+        Parameters:
         predict : np.array
             Предсказанные значения
         y : np.array
@@ -117,7 +117,7 @@ class GradientLinearReg:
         """
         Производит предсказания на основе входных данных X.
 
-        Attributes:
+        Parameters:
         X : np.array, shape (n_samples, n_features)
             Входные признаки
 
